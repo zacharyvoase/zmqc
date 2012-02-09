@@ -1,4 +1,4 @@
-## zmqc
+# zmqc
 
 zmqc is a small but powerful command-line interface to [ØMQ][zmq]. It allows
 you to create a socket of a given type, bind or connect it to multiple
@@ -8,11 +8,17 @@ experimenting with most possible network topologies.
 
   [zmq]: http://www.zeromq.org/
 
-### Usage
+## Installation
+
+    pip install zmqc
+
+
+## Usage
 
     zmqc [-h] [-v] [-0] (-r | -w) (-b | -c) SOCK_TYPE [-o SOCK_OPT=VALUE...] address [address ...]
 
-#### Mode
+
+### Mode
 
 <dl>
   <dt>-r, --read</dt>
@@ -22,7 +28,8 @@ experimenting with most possible network topologies.
     <dd>Write messages from stdin to the socket.</dd>
 </dl>
 
-#### Behavior
+
+### Behavior
 
 <dl>
   <dt>-b, --bind</dt>
@@ -31,7 +38,8 @@ experimenting with most possible network topologies.
     <dd>Connect to the specified address(es).</dd>
 </dl>
 
-#### Socket Parameters
+
+### Socket Parameters
 
 <dl>
   <dt>SOCK_TYPE</dt>
