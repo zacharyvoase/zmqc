@@ -71,7 +71,12 @@ experimenting with most possible network topologies.
     zmqc -rc SUB 'tcp://127.0.0.1:5000'
 
 Subscribe to `tcp://127.0.0.1:5000`, reading messages from it and printing them
-to the console. This will subscribe to all messages by default.
+to the console. This will subscribe to all messages by default (you don't need
+to set an empty `SUBSCRIBE` option). Alternatively:
+
+    zmqc -rc SUB -o SUBSCRIBE='com.organization.' 'tcp://127.0.0.1:5000'
+
+This will subscribe to all messages starting with `com.organization.`.
 
 * * * *
 
