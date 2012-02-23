@@ -248,10 +248,6 @@ def main():
     context = zmq.Context.instance()
     sock = context.socket(getattr(zmq, args.sock_type))
 
-    # Bind or connect to the provided addresses.
-    for address in args.addresses:
-        getattr(sock, args.behavior)(address)
-
     # Set any specified socket options.
     try:
         sock_opts = get_sockopts(args.sock_opts)
@@ -267,6 +263,10 @@ def main():
             not any(opt_code == zmq.SUBSCRIBE
                     for (opt_code, _) in sock_opts)):
             sock.setsockopt(zmq.SUBSCRIBE, '')
+
+    # Bind or connect to the provided addresses.
+    for address in args.addresses:
+        getattr(sock, args.behavior)(address)
 
     # Live forever if no `-n` argument was given, otherwise die after a fixed
     # number of messages.
