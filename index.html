@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>zmqc by zacharyvoase</title>
+    
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>zmqc</h1>
+        <p>netcat for ØMQ.</p>
+        <p class="view"><a href="https://github.com/zacharyvoase/zmqc">View the Project on GitHub <small>zacharyvoase/zmqc</small></a></p>
+        <ul>
+          <li><a href="https://github.com/zacharyvoase/zmqc/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/zacharyvoase/zmqc/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/zacharyvoase/zmqc">Fork On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p>zmqc is a small but powerful command-line interface to <a href="http://www.zeromq.org/">ØMQ</a>. It allows
+you to create a socket of a given type, bind or connect it to multiple
+addresses, set options on it, and receive or send messages over it using
+standard I/O, in the shell or in scripts. It's useful for debugging and
+experimenting with most possible network topologies.</p>
+
+<h2>Usage</h2>
+
+<pre><code>zmqc [-h] [-v] [-0] [-r | -w] (-b | -c) SOCK_TYPE \
+     [-o SOCK_OPT=VALUE...] address [address ...]
+</code></pre>
+
+<h3>Mode</h3>
+
+<dl>
+<p>
+  Whether to read from or write to the socket. For PUB/SUB sockets, this
+  option is invalid since the behavior will always be write and read
+  respectively. For REQ/REP sockets, zmqc will alternate between reading and
+  writing as part of the request/response cycle.
+  </p>
+  <dt>-r, --read</dt>
+    <dd><p>Read messages from the socket onto stdout.</p></dd>
+
+  <dt>-w, --write</dt>
+    <dd><p>Write messages from stdin to the socket.</p></dd>
+</dl><h3>Behavior</h3>
+
+<dl>
+<dt>-b, --bind</dt>
+    <dd><p>Bind to the specified address(es).</p></dd>
+  <dt>-c, --connect</dt>
+    <dd><p>Connect to the specified address(es).</p></dd>
+</dl><p></p>
+
+<h3>Socket Parameters</h3>
+
+<p></p><dl>
+<dt>SOCK_TYPE</dt>
+  <dd><p>
+    Which type of socket to create. Must be one of <code>PUSH</code>, <code>PULL</code>, <code>PUB</code>, <code>SUB</code>, <code>REQ</code>, <code>REP</code>
+    or <code>PAIR</code>. See <code>man zmq_socket</code> for an explanation of the different types.
+    <code>DEALER</code> and <code>ROUTER</code> sockets are currently unsupported.
+  </p></dd>
+  <dt>-o SOCK_OPT=VALUE, --option SOCK_OPT=VALUE</dt>
+  <dd><p>
+    Socket option names and values to set on the created socket. Consult <code>man
+    zmq_setsockopt</code> for a comprehensive list of options. Note that you can
+    safely omit the <code>ZMQ_</code> prefix from the option name. If the created socket
+    is of type <code>SUB</code>, and no <code>SUBSCRIBE</code> options are given, the socket will
+    automatically be subscribed to everything.
+  </p></dd>
+  <dt>address</dt>
+  <dd><p>
+    One or more addresses to bind/connect to. Must be in full ZMQ format (e.g.
+    <code>tcp://&lt;host&gt;:&lt;port&gt;</code>)
+  </p></dd>
+
+
+<p></p>
+
+<h2>Examples</h2>
+
+<pre><code>zmqc -rc SUB 'tcp://127.0.0.1:5000'
+</code></pre>
+
+<p>Subscribe to <code>tcp://127.0.0.1:5000</code>, reading messages from it and printing them
+to the console. This will subscribe to all messages by default (you don't need
+to set an empty <code>SUBSCRIBE</code> option). Alternatively:</p>
+
+<pre><code>zmqc -rc SUB -o SUBSCRIBE='com.organization.' 'tcp://127.0.0.1:5000'
+</code></pre>
+
+<p>This will subscribe to all messages starting with <code>com.organization.</code>.</p>
+
+<hr>
+<pre><code>ls | zmqc -wb PUSH 'tcp://*:4000'
+</code></pre>
+
+<p>Send the name of every file in the current directory as a message from a PUSH
+socket bound to port 4000 on all interfaces. Don't forget to quote the address
+to avoid glob expansion.</p>
+
+<hr>
+<pre><code>zmqc -rc PULL 'tcp://127.0.0.1:5202' | \
+    tee $TTY | \
+    zmqc -wc PUSH 'tcp://127.0.0.1:5404'
+</code></pre>
+
+<p>Read messages coming from a PUSH socket bound to port 5202 (note that we're
+connecting with a PULL socket), echo them to the active console, and forward
+them to a PULL socket bound to port 5404 (so we're connecting with a PUSH).</p>
+
+<hr>
+<pre><code>zmqc -n 10 -0rb PULL 'tcp://*:4123' | \
+    xargs -0 grep 'pattern'
+</code></pre>
+
+<p>Bind to a PULL socket on port 4123, receive 10 messages from the socket
+(with each message representing a filename), and grep the files for
+<code>'pattern'</code>. The <code>-0</code> option means messages will be NULL-delimited rather
+than separated by newlines, so that filenames with spaces in them are not
+considered two separate arguments by xargs.</p>
+
+<hr>
+<pre><code>echo "hello" | zmqc -c REQ 'tcp://127.0.0.1:4000'
+</code></pre>
+
+<p>Send the string <code>hello</code> through a REQ socket connected to localhost on port
+4000, print whatever you get back, and finish. In this way, REQ sockets can
+be used for a rudimentary form of RPC in shell scripts.</p>
+
+<hr>
+<pre><code>coproc zmqc -b REP 'tcp://*:4000'
+tr -u '[a-z]' '[A-Z]' &lt;&amp;p &gt;&amp;p &amp;
+echo "hello" | zmqc -c REQ 'tcp://127.0.0.1:4000'
+</code></pre>
+
+<p>First, start a REP socket listening on port 4000. The <code>coproc</code> shell command
+runs this as a shell coprocess, which allows us to run the next line. <code>tr</code>
+will read its input from the REP socket's output, translate all lowercase
+characters to uppercase, and send them back to the REP socket's input (the <code>-u</code>
+option enables unbuffered streaming). This, again, is run in the background.
+Finally, connect a REQ socket to that REP socket and send the string <code>hello</code>
+through it: you should just see the string <code>HELLO</code> printed on stdout.</p>
+
+<h2>Installation</h2>
+
+<pre><code>pip install zmqc
+</code></pre>
+
+<p>zmqc is released under the <a href="http://unlicense.org/">Unlicense</a>.</p>
+</dl>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/zacharyvoase">zacharyvoase</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
