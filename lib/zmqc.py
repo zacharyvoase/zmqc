@@ -251,7 +251,7 @@ def main():
     elif args.mode is not None and args.sock_type in ('REQ', 'REP'):
         parser.error("Cannot choose a read/write mode with a %s socket" %
                      args.sock_type)
-    elif args.mode is None:
+    elif args.mode is None and args.sock_type not in ('REQ', 'REP'):
         parser.error("one of the arguments -r/--read -w/--write is required")
 
     # We also have to work around the fact that 'required' mutually exclusive
