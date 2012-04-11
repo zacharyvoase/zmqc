@@ -79,13 +79,13 @@ class ParserError(Exception):
 parser = argparse.ArgumentParser(
     prog='zmqc', version=__version__,
     usage=
-        "%(prog)s [-h] [-v] [-0] (-r | -w) (-b | -c)\n            "
+        "%(prog)s [-h] [-v] [-0] [-r | -w] (-b | -c)\n            "
         "SOCK_TYPE [-o SOCK_OPT=VALUE...]\n            "
         "address [address ...]",
-    description="zmqc is a small but powerful command-line interface to ZMQ. "
-    "It allows you to create a socket of a given type, bind or connect it to "
-    "multiple addresses, set options on it, and receive or send messages over "
-    "it using standard I/O, in the shell or in scripts.",
+    description="zmqc is a small but powerful command-line interface to "
+    "ZeroMQ. It allows you to create a socket of a given type, bind or "
+    "connect it to multiple addresses, set options on it, and receive or send "
+    "messages over it using standard I/O, in the shell or in scripts.",
     epilog="This is free and unencumbered software released into the public "
     "domain. For more information, please refer to <http://unlicense.org>.",
 )
@@ -101,11 +101,16 @@ parser.add_argument('-0',
 parser.add_argument('-n', metavar='NUM',
                     dest='number', type=int, default=None,
                     help="Receive/send only NUM messages. By default, zmqc "
-                    "lives forever in 'write' mode, or until the end of input "
-                    "in 'read' mode.")
+                    "lives forever in 'read' mode, or until the end of input "
+                    "in 'write' mode.")
 
-mode_group = parser.add_argument_group(title='Mode')
-mode = mode_group.add_mutually_exclusive_group(required=True)
+mode_group = parser.add_argument_group(
+    title='Mode',
+    description="Whether to read from or write to the socket. For PUB/SUB "
+    "sockets, this option is invalid since the behavior will always be write "
+    "and read respectively. For REQ/REP sockets, zmqc will alternate between "
+    "reading and writing as part of the request/response cycle.")
+mode = mode_group.add_mutually_exclusive_group(required=False)
 mode.add_argument('-r', '--read',
                   dest='mode', action='store_const', const='r',
                   help="Read messages from the socket onto stdout.")
@@ -124,12 +129,11 @@ behavior.add_argument('-c', '--connect',
 
 sock_params = parser.add_argument_group(title='Socket parameters')
 sock_type = sock_params.add_argument('sock_type', metavar='SOCK_TYPE',
-    choices=('PUSH', 'PULL', 'PUB', 'SUB', 'PAIR'), type=str.upper,
+    choices=('PUSH', 'PULL', 'PUB', 'SUB', 'REQ', 'REP', 'PAIR'), type=str.upper,
     help="Which type of socket to create. Must be one of 'PUSH', 'PULL', "
-    "'PUB', 'SUB' or 'PAIR'. See `man zmq_socket` for an explanation of the "
-    "different types. 'REQ', 'REP', 'DEALER' and 'ROUTER' sockets are "
-    "currently unsupported. --read mode is unsupported for PUB sockets, and "
-    "--write mode is unsupported for SUB sockets.")
+    "'PUB', 'SUB', 'REQ', 'REP' or 'PAIR'. See `man zmq_socket` for an "
+    "explanation of the different types. 'DEALER' and 'ROUTER' sockets are "
+    "currently unsupported.")
 
 sock_opts = sock_params.add_argument('-o', '--option',
     metavar='SOCK_OPT=VALUE', dest='sock_opts', action='append', default=[],
@@ -244,6 +248,17 @@ def main():
         parser.error("Cannot write to a SUB socket")
     elif args.sock_type == 'PUB' and args.mode == 'r':
         parser.error("Cannot read from a PUB socket")
+    elif args.mode is not None and args.sock_type in ('REQ', 'REP'):
+        parser.error("Cannot choose a read/write mode with a %s socket" %
+                     args.sock_type)
+    elif args.mode is None:
+        parser.error("one of the arguments -r/--read -w/--write is required")
+
+    # We also have to work around the fact that 'required' mutually exclusive
+    # groups are not enforced when you put them in an argument group other
+    # than the top-level parser.
+    if args.behavior is None:
+        parser.error("one of the arguments -b/--bind -c/--connect is required")
 
     context = zmq.Context.instance()
     sock = context.socket(getattr(zmq, args.sock_type))
@@ -276,7 +291,11 @@ def main():
         iterator = itertools.repeat(None, args.number)
 
     try:
-        if args.mode == 'r':
+        if args.sock_type == 'REQ':
+            req_loop(iterator, sock, args.delimiter, sys.stdin, sys.stdout)
+        elif args.sock_type == 'REP':
+            rep_loop(iterator, sock, args.delimiter, sys.stdin, sys.stdout)
+        elif args.mode == 'r':
             read_loop(iterator, sock, args.delimiter, sys.stdout)
         elif args.mode == 'w':
             write_loop(iterator, sock, args.delimiter, sys.stdin)
@@ -287,6 +306,22 @@ def main():
         return
     finally:
         sock.close()
+
+
+def req_loop(iterator, sock, delimiter, input, output):
+    """Write/read interaction for a REQ socket."""
+
+    for _ in iterator:
+        write(sock, delimiter, input)
+        read(sock, delimiter, output)
+
+
+def rep_loop(iterator, sock, delimiter, input, output):
+    """Read/write interaction for a REP socket."""
+
+    for _ in iterator:
+        read(sock, delimiter, output)
+        write(sock, delimiter, input)
 
 
 def read_loop(iterator, sock, delimiter, output):
