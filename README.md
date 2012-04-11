@@ -104,6 +104,28 @@ Bind to a PULL socket on port 4123, receive 10 messages from the socket
 than separated by newlines, so that filenames with spaces in them are not
 considered two separate arguments by xargs.
 
+* * * *
+
+    echo "hello" | zmqc -c REQ 'tcp://127.0.0.1:4000'
+
+Send the string `hello` through a REQ socket connected to localhost on port
+4000, print whatever you get back, and finish. In this way, REQ sockets can
+be used for a rudimentary form of RPC in shell scripts.
+
+* * * *
+
+    coproc zmqc -b REP 'tcp://*:4000'
+    tr -u '[a-z]' '[A-Z]' <&p >&p &
+    echo "hello" | zmqc -c REQ 'tcp://127.0.0.1:4000'
+
+First, start a REP socket listening on port 4000. The `coproc` shell command
+runs this as a shell coprocess, which allows us to run the next line, tr. This
+will read its input from the REP socket's output, translate all lowercase
+characters to uppercase, and send them back to the REP socket's input. This,
+again, is run in the background. Finally, connect a REQ socket to that REP
+socket and send the string `hello` through it: you should just see the string
+`HELLO` printed on stdout.
+
 
 ## (Un)license
 
