@@ -2,7 +2,7 @@
 # zmqc: a small but powerful command-line interface to ZMQ.
 
 ## Usage:
-# zmqc [-0] (-r | -w) (-b | -c) SOCK_TYPE [-o SOCK_OPT=VALUE...] address [address ...]
+# zmqc [-0] [-r | -w] (-b | -c) SOCK_TYPE [-o SOCK_OPT=VALUE...] address [address ...]
 
 ## Examples:
 # zmqc -rc SUB 'tcp://127.0.0.1:5000'

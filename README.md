@@ -15,12 +15,19 @@ experimenting with most possible network topologies.
 
 ## Usage
 
-    zmqc [-h] [-v] [-0] (-r | -w) (-b | -c) SOCK_TYPE [-o SOCK_OPT=VALUE...] address [address ...]
+    zmqc [-h] [-v] [-0] [-r | -w] (-b | -c) SOCK_TYPE [-o SOCK_OPT=VALUE...] address [address ...]
 
 
 ### Mode
 
 <dl>
+  <p>
+    Whether to read from or write to the socket. For PUB/SUB sockets, this
+    option is invalid since the behavior will always be write and read
+    respectively. For REQ/REP sockets, zmqc will alternate between reading and
+    writing as part of the request/response cycle.
+  </p>
+
   <dt>-r, --read</dt>
     <dd>Read messages from the socket onto stdout.</dd>
 
@@ -44,11 +51,10 @@ experimenting with most possible network topologies.
 <dl>
   <dt>SOCK_TYPE</dt>
   <dd>
-    Which type of socket to create. Must be one of `PUSH`, `PULL`, `PUB`, `SUB`
-    or `PAIR`. See `man zmq_socket` for an explanation of the different types.
-    `REQ`, `REP`, `DEALER` and `ROUTER` sockets are currently unsupported.
-    **--read** mode is unsupported for PUB sockets, and **--write** mode is
-    unsupported for `SUB` sockets.
+    Which type of socket to create. Must be one of `PUSH`, `PULL`, `PUB`,
+    `SUB`, `REQ`, `REP` or `PAIR`. See `man zmq_socket` for an explanation of
+    the different types. `DEALER` and `ROUTER` sockets are currently
+    unsupported.
   </dd>
   <dt>-o SOCK_OPT=VALUE, --option SOCK_OPT=VALUE</dt>
   <dd>
