@@ -280,6 +280,11 @@ def main():
             read_loop(iterator, sock, args.delimiter, sys.stdout)
         elif args.mode == 'w':
             write_loop(iterator, sock, args.delimiter, sys.stdin)
+    except StopIteration:
+        # StopIteration is a sentinel for end of input, iterator exhaustion
+        # (that is, we've processed the maximum number of messages) or Ctrl-C.
+        # All need to be handled in the same way.
+        return
     finally:
         sock.close()
 
@@ -288,27 +293,39 @@ def read_loop(iterator, sock, delimiter, output):
     """Continously get messages from the socket and print them on output."""
 
     for _ in iterator:
-        try:
-            message = sock.recv()
-            output.write(message + delimiter)
-            output.flush()
-        except KeyboardInterrupt:
-            return
-        except IOError, exc:
-            if exc.errno == errno.EPIPE:
-                return
-            raise
+        read(sock, delimiter, output)
 
 
 def write_loop(iterator, sock, delimiter, input):
-    """Continously get messages from input and send them through the socket."""
+    """Continously get messages from input and send them through a socket."""
 
     for _ in iterator:
-        try:
-            message = read_until_delimiter(input, delimiter)
-            sock.send(message)
-        except (KeyboardInterrupt, EOFError):
-            return
+        write(sock, delimiter, input)
+
+
+def read(sock, delimiter, output):
+    """Read one message from a socket onto an output stream."""
+
+    try:
+        message = sock.recv()
+        output.write(message + delimiter)
+        output.flush()
+    except KeyboardInterrupt:
+        raise StopIteration
+    except IOError, exc:
+        if exc.errno == errno.EPIPE:
+            raise StopIteration
+        raise
+
+
+def write(sock, delimiter, input):
+    """Write one message from an input stream into a socket."""
+
+    try:
+        message = read_until_delimiter(input, delimiter)
+        sock.send(message)
+    except (KeyboardInterrupt, EOFError):
+        raise StopIteration
 
 
 if __name__ == '__main__':
