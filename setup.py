@@ -19,6 +19,7 @@ setup(
     package_dir={'': 'lib'},
     py_modules=['zmqc'],
     install_requires=[
+        'pyzmq<3',
         'argparse>=1.2.1',
     ],
     entry_points={
