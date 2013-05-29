@@ -222,11 +222,15 @@ def get_sockopts(sock_opts):
         zmqc.ParserError: Unrecognised socket option: 'NONEXISTENTOPTION'
 
     """
+    try:
+        import zmq.sugar as optslib
+    except:
+        import zmq.core.constants as optslib
 
     option_coerce = {
-        int: set(zmq.core.constants.int_sockopts).union(
-            zmq.core.constants.int64_sockopts),
-        str: set(zmq.core.constants.bytes_sockopts)
+        int: set(optslib.int_sockopts).union(
+            optslib.int64_sockopts),
+        str: set(optslib.bytes_sockopts)
     }
 
     options = []
