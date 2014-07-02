@@ -1,3 +1,2 @@
 include UNLICENSE
 include VERSION
-include distribute_setup.py
