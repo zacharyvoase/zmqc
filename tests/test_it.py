@@ -1,16 +1,21 @@
-import zmq
-import pytest
-from itertools import count
+def test_pubsub(zmq_pub, cmd_dev):
+    zmq_pub.bind()
+    url = zmq_pub.url
+    cmd_dev.start(["-r", "-c", "SUB", url])
+    msgs = ["one", "two", "three"]
+    zmq_pub.send(msgs)
+    cmd_dev.terminate()
+    outmsgs = cmd_dev.recv()
+    assert len(outmsgs) == len(msgs)
+    assert outmsgs == msgs
 
-def test_it():
-    url = "tcp://147.32.102.103:9260"
-    context = zmq.Context()
-    socket = context.socket(zmq.SUB)
-    socket.setsockopt(zmq.SUBSCRIBE, "")
-    socket.connect(url)
-    for i in xrange(5):
-        print socket.recv()
-
-
-if __name__ == "__main__":
-    test_it()
+def test_pushpull(zmq_push, cmd_dev):
+    zmq_push.bind()
+    url = zmq_push.url
+    cmd_dev.start(["-r", "-c", "PULL", url])
+    msgs = ["one", "two", "three"]
+    zmq_push.send(msgs)
+    cmd_dev.terminate()
+    outmsgs = cmd_dev.recv()
+    assert len(outmsgs) == len(msgs)
+    assert outmsgs == msgs
