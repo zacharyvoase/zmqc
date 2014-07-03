@@ -13,9 +13,9 @@ class ZmqDevice(object):
         for msg in msgs:
             self.socket.send(msg)
     def bind(self):
-        #port = self.socket.bind_to_random_port("tcp://*")
-        self.socket.bind("tcp://*:8888")
-        port = 8888
+        port = self.socket.bind_to_random_port("tcp://*")
+        #self.socket.bind("tcp://*:9999")
+        #port = 9999
         self.url = "tcp://localhost:{port}".format(port=port)
 class CmdDevice(object):
     def __init__(self):
