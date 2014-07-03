@@ -243,7 +243,7 @@ def get_sockopts(sock_opts):
         if opt_name.startswith('ZMQ_'):
             opt_name = opt_name[4:]
         try:
-            opt_code = getattr(zmq.core.constants, opt_name.upper())
+            opt_code = getattr(optslib.constants, opt_name.upper())
         except AttributeError:
             raise ParserError("Unrecognised socket option: %r" % (
                 match.group(1),))
