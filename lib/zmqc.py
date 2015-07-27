@@ -84,9 +84,9 @@ import re
 import sys
 
 import zmq
+import pkg_resources
 
-
-__version__ = '0.0.1'
+__version__ = pkg_resources.require("zmqc")[0].version
 
 
 class ParserError(Exception):
@@ -95,7 +95,7 @@ class ParserError(Exception):
 
 
 parser = argparse.ArgumentParser(
-    prog='zmqc', version=__version__,
+    prog='zmqc',
     usage=
         "%(prog)s [-h] [-v] [-0] [-r | -w] (-b | -c)\n            "
         "SOCK_TYPE [-o SOCK_OPT=VALUE...]\n            "
@@ -107,7 +107,7 @@ parser = argparse.ArgumentParser(
     epilog="This is free and unencumbered software released into the public "
     "domain. For more information, please refer to <http://unlicense.org>.",
 )
-
+parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument('-0',
                     dest='delimiter', action='store_const',
                     const='\x00', default='\n',
@@ -288,7 +288,7 @@ def main():
     # Set any specified socket options.
     try:
         sock_opts = get_sockopts(args.sock_opts)
-    except ParserError, exc:
+    except ParserError as exc:
         parser.error(str(exc))
     else:
         for opt_code, opt_value in sock_opts:
@@ -369,7 +369,7 @@ def read(sock, delimiter, output):
         output.flush()
     except KeyboardInterrupt:
         raise StopIteration
-    except IOError, exc:
+    except IOError as exc:
         if exc.errno == errno.EPIPE:
             raise StopIteration
         raise
