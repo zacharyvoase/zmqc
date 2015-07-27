@@ -2,10 +2,9 @@
 *.pyc
 *.pyo
 .DS_Store
+.tox
+MANIFEST
 build
 dist
-MANIFEST
-test/example/*.sqlite3
 doc/.build
-distribute-*.egg
-distribute-*.tar.gz
+test/example/*.sqlite3
